@@ -1,0 +1,342 @@
+---
+title: "Data Analysis Report with BTW R MCP v3"
+author: "Your Name"
+date: "`r Sys.Date()`"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: true
+  warning: true
+  message: true
+---
+
+# Introduction
+
+This Quarto document demonstrates how to create reproducible analysis reports using BTW R MCP v3 with Claude's assistance.
+
+**Try asking Claude:**
+- "Create a Quarto document analyzing the iris dataset"
+- "Add a new section comparing species with statistical tests"
+- "Render this document to HTML and PDF"
+
+---
+
+# Setup
+
+```{r setup}
+#| label: setup
+#| message: false
+
+# Load required packages
+library(dplyr)
+library(ggplot2)
+library(knitr)
+
+# Set options
+options(scipen = 999)  # Avoid scientific notation
+knitr::opts_chunk$set(
+  fig.width = 8,
+  fig.height = 6,
+  fig.align = "center",
+  dpi = 300
+)
+```
+
+---
+
+# Data Loading and Overview
+
+## Load Data
+
+```{r load-data}
+#| label: load-data
+
+# Using built-in iris dataset
+data <- iris
+
+# Show dimensions
+cat("Dataset dimensions:", nrow(data), "rows x", ncol(data), "columns\n")
+```
+
+## Data Structure
+
+```{r data-structure}
+#| label: data-structure
+
+# Display structure
+str(data)
+
+# Summary statistics
+summary(data)
+```
+
+## Preview
+
+```{r data-preview}
+#| label: data-preview
+
+# First few rows
+kable(head(data, 10),
+      caption = "First 10 rows of iris dataset")
+```
+
+---
+
+# Exploratory Data Analysis
+
+## Distribution by Species
+
+```{r species-distribution}
+#| label: species-distribution
+
+# Count by species
+species_counts <- data |>
+  group_by(Species) |>
+  summarise(Count = n())
+
+kable(species_counts,
+      caption = "Sample sizes by species")
+```
+
+## Summary Statistics by Species
+
+```{r summary-by-species}
+#| label: summary-by-species
+
+# Calculate means for each measurement
+species_summary <- data |>
+  group_by(Species) |>
+  summarise(
+    Mean_Sepal_Length = mean(Sepal.Length),
+    Mean_Sepal_Width = mean(Sepal.Width),
+    Mean_Petal_Length = mean(Petal.Length),
+    Mean_Petal_Width = mean(Petal.Width)
+  )
+
+kable(species_summary,
+      digits = 2,
+      caption = "Average measurements by species")
+```
+
+---
+
+# Visualizations
+
+## Sepal Dimensions
+
+```{r plot-sepal}
+#| label: fig-sepal
+#| fig-cap: "Sepal dimensions across species"
+
+ggplot(data, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  scale_color_manual(values = c("setosa" = "#E69F00",
+                                  "versicolor" = "#56B4E9",
+                                  "virginica" = "#009E73")) +
+  labs(
+    title = "Sepal Dimensions Across Iris Species",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    legend.position = "top"
+  )
+```
+
+## Petal Dimensions
+
+```{r plot-petal}
+#| label: fig-petal
+#| fig-cap: "Petal dimensions across species"
+
+ggplot(data, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  scale_color_manual(values = c("setosa" = "#E69F00",
+                                  "versicolor" = "#56B4E9",
+                                  "virginica" = "#009E73")) +
+  labs(
+    title = "Petal Dimensions Across Iris Species",
+    x = "Petal Length (cm)",
+    y = "Petal Width (cm)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    legend.position = "top"
+  )
+```
+
+## Distribution Plots
+
+```{r plot-distributions}
+#| label: fig-distributions
+#| fig-cap: "Distribution of petal length by species"
+#| fig-width: 10
+#| fig-height: 6
+
+ggplot(data, aes(x = Petal.Length, fill = Species)) +
+  geom_histogram(bins = 20, alpha = 0.6, position = "identity") +
+  scale_fill_manual(values = c("setosa" = "#E69F00",
+                                 "versicolor" = "#56B4E9",
+                                 "virginica" = "#009E73")) +
+  labs(
+    title = "Distribution of Petal Length",
+    x = "Petal Length (cm)",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  ) +
+  facet_wrap(~ Species, ncol = 3)
+```
+
+---
+
+# Statistical Analysis
+
+## Correlation Analysis
+
+```{r correlations}
+#| label: correlations
+
+# Calculate correlation matrix for numeric variables
+numeric_vars <- data |> select(-Species)
+cor_matrix <- cor(numeric_vars)
+
+kable(cor_matrix,
+      digits = 3,
+      caption = "Correlation matrix of iris measurements")
+```
+
+**Key findings:**
+- Petal length and petal width are highly correlated (r = `r round(cor(data$Petal.Length, data$Petal.Width), 3)`)
+- Sepal measurements show weaker correlation (r = `r round(cor(data$Sepal.Length, data$Sepal.Width), 3)`)
+
+## Linear Model
+
+```{r linear-model}
+#| label: linear-model
+
+# Fit a model predicting petal width from petal length
+model <- lm(Petal.Width ~ Petal.Length, data = data)
+
+# Summary
+summary(model)
+```
+
+**Model interpretation:**
+- R-squared: `r round(summary(model)$r.squared, 3)` (explains `r round(summary(model)$r.squared * 100, 1)`% of variance)
+- For every 1 cm increase in petal length, petal width increases by `r round(coef(model)[2], 3)` cm
+
+## Model Diagnostics
+
+```{r diagnostics}
+#| label: fig-diagnostics
+#| fig-cap: "Model diagnostic plots"
+#| fig-width: 10
+#| fig-height: 8
+
+par(mfrow = c(2, 2))
+plot(model, main = "Linear Model Diagnostics")
+par(mfrow = c(1, 1))
+```
+
+---
+
+# Conclusions
+
+## Key Findings
+
+1. **Clear species separation**: Petal dimensions effectively distinguish the three species
+2. **Strong petal correlation**: Petal length and width are highly correlated (r = 0.96)
+3. **Linear relationship**: Petal width can be predicted from petal length with high accuracy (R² = 0.93)
+
+## Species Characteristics
+
+```{r species-characteristics}
+#| label: species-characteristics
+
+# Create summary table
+final_summary <- data |>
+  group_by(Species) |>
+  summarise(
+    Sample_Size = n(),
+    Avg_Petal_Length = mean(Petal.Length),
+    Avg_Petal_Width = mean(Petal.Width),
+    SD_Petal_Length = sd(Petal.Length)
+  )
+
+kable(final_summary,
+      digits = 2,
+      caption = "Final species characteristics summary")
+```
+
+---
+
+# Session Information
+
+```{r session-info}
+#| label: session-info
+
+sessionInfo()
+```
+
+---
+
+# Appendix: How This Was Created
+
+## Using BTW R MCP v3 with Claude
+
+This document was created collaboratively with Claude using BTW R MCP v3:
+
+**Setup:**
+```r
+# In RStudio:
+library(btw)
+btw_mcp_session()
+```
+
+**Workflow:**
+```
+1. "Create a Quarto document analyzing the iris dataset"
+2. "Add visualizations with ggplot2"
+3. "Include a linear model section"
+4. "Add diagnostic plots"
+5. "Create a summary table"
+```
+
+**Benefits of v3:**
+- ✅ Claude sees all output (summary, plots, model results)
+- ✅ Iterative refinement based on what we see
+- ✅ Natural collaboration—both working from same view
+- ✅ Fast iteration with complete visibility
+
+## Rendering This Document
+
+**In RStudio:**
+```r
+quarto::quarto_render("quarto_document.qmd")
+```
+
+**Or ask Claude:**
+```
+"Render this Quarto document to HTML and PDF"
+```
+
+**Or via command line:**
+```bash
+quarto render quarto_document.qmd
+quarto render quarto_document.qmd --to pdf
+```
+
+---
+
+**Created with BTW R MCP v3 - Complete bidirectional visibility for collaborative R development**
