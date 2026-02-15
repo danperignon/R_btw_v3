@@ -1,6 +1,6 @@
 # BTW R MCP v3
 
-Connect Claude Code to your RStudio session. Complete bidirectional visibility—both you AND Claude see all execution output simultaneously.
+Provides complete and simultaneous bidirectional visibility of all execution output.
 
 ## Quick Start
 
